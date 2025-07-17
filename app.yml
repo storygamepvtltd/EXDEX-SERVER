@@ -1,0 +1,17 @@
+server:
+  port: "3003"
+
+mongo:
+  dbname: "exdex"
+  uri: "mongodb://localhost:27017"
+  username: "user"
+  password: "password"
+
+cron:
+  is_runner: true
+
+
+
+jwt:
+  secret: "EXEX@%^&^&SLNS"
+  expiration: "2h"
