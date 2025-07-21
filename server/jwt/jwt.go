@@ -13,6 +13,7 @@ func GenerateJWT(userID string, email string, role string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	// fmt.Println("lsfkjglsfjg", viper.GetString("jwt.expiration"))
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":    userID,

@@ -84,7 +84,16 @@ func (a AuthServices) ExdexAuth(exdexToken string) (string, error) {
 		}
 	}
 
-	token, err := jwt.GenerateJWT(user.ID, user.Email, user.Role)
+	// filter := bson.M{"email": user.Email}
+
+	var u []models.User
+	err = repository.IRepo.FindByKeyValue("users", &u, "email", user.Email)
+	if err != nil {
+		return "", err
+	}
+	// fmt.Println(user.ID, user.Role)
+
+	token, err := jwt.GenerateJWT(u[0].ID, user.Email, user.Role)
 	if err != nil {
 		return "", err
 	}

@@ -37,7 +37,11 @@ func (i *impel) Start() {
 		{
 			trade := auth.Group("tarde")
 			{
-				i.tradeRouter(trade)
+				i.tradeRouter(trade, app)
+			}
+			order := auth.Group("order")
+			{
+				i.orderRouter(order)
 			}
 		}
 

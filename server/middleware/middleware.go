@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -40,6 +41,10 @@ func JWTMiddleware() fiber.Handler {
 				"error":  "Failed to extract token claims",
 			})
 		}
+
+		fmt.Println(">>>")
+		fmt.Println(">>>", id)
+		fmt.Println(">>>")
 
 		c.Locals("userID", id)
 		c.Locals("email", email)

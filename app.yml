@@ -15,3 +15,13 @@ cron:
 jwt:
   secret: "EXEX@%^&^&SLNS"
   expiration: "2h"
+
+
+binance:
+  apiKey: "b5J1Wa8FEi7TVeeO6jLOsWBdEdmPsGmwB4gxJXT0F4YKlQx3VXmTtSeVn4Wuhwta"
+  apiSecret: "npG6JapFCZ9B3iA39ODdpdOkLOOzqoK8S1O5E7I9vgXJ1Axh28ICpcf3c2Rmfd8f"
+  baseURL: "https://testnet.binance.vision"
+  symbol: "BTCUSDT"
+  recvWindow: 5000
+
+

@@ -5,6 +5,8 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	models "exdex/internal/src/model"
 )
 
 type RepositoryInterfaces interface {
@@ -19,4 +21,10 @@ type RepositoryInterfaces interface {
 	RemoveByFilter(collectionName string, filter bson.M) error
 	GetByEmail(collectionName string, email string, result interface{}) error
 	Count(collectionName string, filter bson.M) (int64, error) // New method
+	GetAllByFiltter(
+		collectionName string,
+		items interface{},
+		query bson.M, // 👈 custom filter
+		filter models.Filter,
+	) error
 }

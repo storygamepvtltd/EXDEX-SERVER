@@ -44,6 +44,30 @@ func (r *MongoDBRepository) Create(collectionName string, item interface{}) erro
 	return nil
 }
 
+func (r *MongoDBRepository) GetAllByFiltter(
+	collectionName string,
+	items interface{},
+	query bson.M, // 👈 custom filter
+	filter models.Filter,
+) error {
+	findOptions := options.Find()
+	findOptions.SetLimit(int64(filter.Limit))
+	findOptions.SetSkip(int64(filter.Offset))
+
+	if filter.Sort != "" {
+		findOptions.SetSort(bson.M{filter.Sort: filter.SortOrder})
+	}
+
+	collection := database.DB.Collection(collectionName)
+	cursor, err := collection.Find(context.Background(), query, findOptions)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(context.Background())
+
+	return cursor.All(context.Background(), items)
+}
+
 func (r *MongoDBRepository) FindOneWhere(collectionName string, filter bson.M, result interface{}) error {
 	collection := database.DB.Collection(collectionName)
 	err := collection.FindOne(context.Background(), filter).Decode(result)

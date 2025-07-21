@@ -3,54 +3,59 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"strings"
+	"log"
+	"net/url"
+
+	"github.com/gorilla/websocket"
 )
 
-// Structure for Binance 24hr ticker data
-type Ticker24hr struct {
-	Symbol             string `json:"symbol"`
-	PriceChangePercent string `json:"priceChangePercent"`
-	LastPrice          string `json:"lastPrice"`
+// OrderBookUpdate represents Binance depth stream response
+type OrderBookUpdate struct {
+	LastUpdateID int        `json:"u"`
+	Bids         [][]string `json:"b"`
+	Asks         [][]string `json:"a"`
 }
 
 func main() {
-	// List of symbols you want
-	symbols := []string{"BGBUSDT", "CARVUSDT", "PUFFERUSDT", "BTCUSDT", "DOGSUSDT", "CATSUSDT", "DOGEUSDT", "SUIUSDT", "PEPEUSDT", "SOLUSDT"}
+	symbol := "btcusdt" // example symbol
+	stream := fmt.Sprintf("%s@depth", symbol)
+	endpoint := url.URL{
+		Scheme: "wss",
+		Host:   "testnet.binance.vision",
+		Path:   fmt.Sprintf("/ws/%s", stream),
+	}
 
-	// Binance API URL
-	url := "https://api.binance.com/api/v3/ticker/24hr"
-
-	// Send HTTP request
-	resp, err := http.Get(url)
+	log.Printf("Connecting to %s", endpoint.String())
+	conn, _, err := websocket.DefaultDialer.Dial(endpoint.String(), nil)
 	if err != nil {
-		fmt.Println("Error fetching data:", err)
-		return
+		log.Fatal("WebSocket dial error:", err)
 	}
-	defer resp.Body.Close()
+	defer conn.Close()
 
-	// Decode JSON
-	var tickers []Ticker24hr
-	err = json.NewDecoder(resp.Body).Decode(&tickers)
-	if err != nil {
-		fmt.Println("Error decoding JSON:", err)
-		return
-	}
+	log.Println("✅ Connected to Binance WebSocket!")
 
-	// Loop and print only needed symbols
-	for _, ticker := range tickers {
-		if contains(symbols, ticker.Symbol) {
-			fmt.Printf("%s => %s%% | Last Price: %s\n", ticker.Symbol, ticker.PriceChangePercent, ticker.LastPrice)
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			log.Println("Error reading message:", err)
+			break
 		}
-	}
-}
 
-// Helper function to check if a symbol is in list
-func contains(list []string, item string) bool {
-	for _, v := range list {
-		if strings.EqualFold(v, item) {
-			return true
+		var update OrderBookUpdate
+		err = json.Unmarshal(message, &update)
+		if err != nil {
+			log.Println("JSON parse error:", err)
+			continue
 		}
+
+		// Display top 1 bid and ask
+		fmt.Println("📈 Live Order Book Update:")
+		if len(update.Bids) > 0 {
+			fmt.Printf("Bid: %s @ %s\n", update.Bids[0][1], update.Bids[0][0])
+		}
+		if len(update.Asks) > 0 {
+			fmt.Printf("Ask: %s @ %s\n", update.Asks[0][1], update.Asks[0][0])
+		}
+		fmt.Println("-------------------------------")
 	}
-	return false
 }
