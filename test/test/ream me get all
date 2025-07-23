@@ -1,0 +1,159 @@
+package main
+
+import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
+	"strconv"
+	"time"
+)
+
+const (
+	apiKey    = "b5J1Wa8FEi7TVeeO6jLOsWBdEdmPsGmwB4gxJXT0F4YKlQx3VXmTtSeVn4Wuhwta"
+	apiSecret = "npG6JapFCZ9B3iA39ODdpdOkLOOzqoK8S1O5E7I9vgXJ1Axh28ICpcf3c2Rmfd8f"
+	baseURL   = "https://testnet.binance.vision"
+	symbol    = "BTCUSDT" // You can change this to another symbol like "ETHUSDT"
+)
+
+type Order struct {
+	Symbol        string `json:"symbol"`
+	OrderID       int64  `json:"orderId"`
+	ClientOrderID string `json:"clientOrderId"`
+	Price         string `json:"price"`
+	OrigQty       string `json:"origQty"`
+	ExecutedQty   string `json:"executedQty"`
+	Status        string `json:"status"`
+	TimeInForce   string `json:"timeInForce"`
+	Type          string `json:"type"`
+	Side          string `json:"side"`
+	StopPrice     string `json:"stopPrice"`
+	IcebergQty    string `json:"icebergQty"`
+	Time          int64  `json:"time"`
+	UpdateTime    int64  `json:"updateTime"`
+	IsWorking     bool   `json:"isWorking"`
+}
+
+func main() {
+	clearScreen()
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
+
+	fmt.Println("=== Binance All Orders Tracker ===")
+	fmt.Println("Fetching all (filled + open) orders every 5 seconds...")
+	fmt.Println("Press Ctrl+C to exit\n")
+
+	for {
+		select {
+		case <-ticker.C:
+			displayAllOrders()
+		case <-interrupt:
+			fmt.Println("\nExiting...")
+			return
+		}
+	}
+}
+
+func displayAllOrders() {
+	orders, err := getAllOrders(symbol)
+	if err != nil {
+		fmt.Printf("Error fetching orders: %v\n", err)
+		return
+	}
+
+	clearScreen()
+
+	fmt.Printf("=== All Orders for %s (Updated: %s) ===\n", symbol, time.Now().Format(time.RFC1123))
+	fmt.Printf("Found %d orders (filtered by executedQty > 0 or status != NEW)\n\n", len(orders))
+
+	count := 0
+	for i, order := range orders {
+		if order.ExecutedQty != "0.00000000" || order.Status != "NEW" {
+			count++
+			fmt.Printf("Order #%d:\n", i+1)
+			fmt.Printf("  Symbol:       %s\n", order.Symbol)
+			fmt.Printf("  Side:         %s\n", order.Side)
+			fmt.Printf("  Type:         %s\n", order.Type)
+			fmt.Printf("  Price:        %s\n", order.Price)
+			fmt.Printf("  Quantity:     %s (Executed: %s)\n", order.OrigQty, order.ExecutedQty)
+			fmt.Printf("  Status:       %s\n", order.Status)
+			fmt.Printf("  Order ID:     %d\n", order.OrderID)
+			fmt.Printf("  Time:         %s\n", time.Unix(order.Time/1000, 0).Format(time.RFC1123))
+			fmt.Printf("  Last Update:  %s\n", time.Unix(order.UpdateTime/1000, 0).Format(time.RFC1123))
+			fmt.Println("------------------------------------")
+		}
+	}
+
+	if count == 0 {
+		fmt.Println("No filled or partially filled orders found.")
+	}
+	fmt.Println("\nAuto-refreshing every 5 seconds... Press Ctrl+C to exit")
+}
+
+func getAllOrders(symbol string) ([]Order, error) {
+	timestamp := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
+
+	params := url.Values{}
+	params.Set("symbol", symbol)
+	params.Set("timestamp", timestamp)
+
+	signature := createSignature(params.Encode())
+	requestURL := fmt.Sprintf("%s/api/v3/allOrders?%s&signature=%s", baseURL, params.Encode(), signature)
+
+	req, err := http.NewRequest("GET", requestURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("X-MBX-APIKEY", apiKey)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var apiErr struct {
+			Code int    `json:"code"`
+			Msg  string `json:"msg"`
+		}
+		if err := json.Unmarshal(body, &apiErr); err != nil {
+			return nil, fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
+		}
+		return nil, fmt.Errorf("API error %d: %s", apiErr.Code, apiErr.Msg)
+	}
+
+	var orders []Order
+	if err := json.Unmarshal(body, &orders); err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}
+
+func createSignature(data string) string {
+	h := hmac.New(sha256.New, []byte(apiSecret))
+	h.Write([]byte(data))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func clearScreen() {
+	fmt.Print("\033[H\033[2J")
+}

@@ -5,6 +5,7 @@ import (
 
 	"exdex/config"
 	"exdex/internal/router"
+	"exdex/internal/src/handler"
 	"exdex/internal/src/repository"
 	database "exdex/server/databases"
 	"exdex/server/info"
@@ -40,5 +41,6 @@ func (i *impl) Init() {
 		database.Init()
 		info.ServerInfoInit()
 		repository.Init()
+		go handler.WsInit()
 	})
 }

@@ -16,20 +16,21 @@ type OrderRequest struct {
 }
 
 type PlacedOrder struct {
-	ID        string    `bson:"_id,omitempty"` // MongoDB ID
-	UserID    string    `bson:"user_id"`
-	Symbol    string    `bson:"symbol"`
-	Side      string    `bson:"side"`
-	OrderType string    `bson:"order_type"`
-	Quantity  string    `bson:"quantity"`
-	WithTPSL  bool      `bson:"with_tpsl"`
-	UseAbs    bool      `bson:"use_absolute"`
-	TPPrice   float64   `bson:"tp_price,omitempty"`
-	SLPrice   float64   `bson:"sl_price,omitempty"`
-	TPMul     float64   `bson:"tp_multiplier,omitempty"`
-	SLMul     float64   `bson:"sl_multiplier,omitempty"`
-	Response  string    `bson:"response"` // Binance response string
-	CreatedAt time.Time `bson:"created_at"`
+	ID            string `bson:"_id,omitempty"` // MongoDB ID
+	Symbol        string `json:"symbol"`
+	UserID        string `bson:"user_id"`
+	OrderID       int64  `json:"orderId"`
+	ClientOrderID string `json:"clientOrderId"`
+	TransactTime  int64  `json:"transactTime"`
+	Price         string `json:"price"`
+	OrigQty       string `json:"origQty"`
+	ExecutedQty   string `json:"executedQty"`
+	Status        string `json:"status"`
+	Type          string `json:"type"`
+	Side          string `json:"side"`
+
+	CreatedAt time.Time `bson:"created_at,omitempty" json:"created_at"`
+	UpdatedAt time.Time `bson:"updated_at,omitempty" json:"updated_at"`
 }
 
 // type Fill struct {
@@ -50,7 +51,7 @@ type Fill struct {
 	CommissionAsset string `json:"commissionAsset"`
 }
 
-type OrderResponse struct {
+type OrderResponse2 struct {
 	Symbol              string `json:"symbol"`
 	OrderId             int64  `json:"orderId"`
 	ClientOrderId       string `json:"clientOrderId"`

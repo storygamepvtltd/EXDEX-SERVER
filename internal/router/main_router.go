@@ -5,8 +5,10 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
 	"github.com/spf13/viper"
 
+	"exdex/internal/src/handler"
 	"exdex/server/middleware"
 )
 
@@ -25,6 +27,9 @@ func (i *impel) Start() {
 	app.Get("/", func(c Ctx) error {
 		return c.SendString("Hello, World!")
 	})
+
+	app.Get("/ws", websocket.New(handler.WebSocketHandler))
+
 	// Example group
 	v1 := app.Group("/v1")
 	{

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
 
 	models "exdex/internal/src/model"
 	"exdex/internal/src/services"
@@ -100,4 +101,21 @@ func CancelOCOOrderHandler(c *fiber.Ctx) error {
 	}
 
 	return response.SuccessResponse(c, "Order sent successfully", res)
+}
+
+func WebSocketHandler(c *websocket.Conn) {
+	defer c.Close()
+	for {
+		_, msg, err := c.ReadMessage()
+		if err != nil {
+			log.Println("WebSocket read error:", err)
+			break
+		}
+		log.Printf("Received: %s", msg)
+
+		if err := c.WriteMessage(websocket.TextMessage, msg); err != nil {
+			log.Println("WebSocket write error:", err)
+			break
+		}
+	}
 }

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .box {
+      width: 100px;
+      height: 100px;
+      background-color: royalblue;
+      position: relative;
+      animation: moveRight; /* Removed 'infinite' */
+    }
+
+    @keyframes moveRight {
+      0%   { left: 0; }
+      50%  { left: 100px; }
+      100% { left: 100px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="box"></div>
+
+</body>
+</html>
